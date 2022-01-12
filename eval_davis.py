@@ -28,6 +28,7 @@ parser.add_argument('--split', help='val/testdev', default='val')
 parser.add_argument('--top', type=int, default=20)
 parser.add_argument('--amp', action='store_true')
 parser.add_argument('--mem_every', default=5, type=int)
+parser.add_argument('--first_frame_folder', default='Annotations', help='Where to take the first frame annotation from.')
 parser.add_argument('--include_last', help='include last frame as temporary memory?', action='store_true')
 args = parser.parse_args()
 
@@ -42,10 +43,10 @@ torch.autograd.set_grad_enabled(False)
 
 # Setup Dataset
 if args.split == 'val':
-    test_dataset = DAVISTestDataset(davis_path+'/trainval', imset='2017/val.txt')
+    test_dataset = DAVISTestDataset(davis_path+'/trainval', imset='2017/val.txt', first_frame_folder=args.first_frame_folder)
     test_loader = DataLoader(test_dataset, batch_size=1, shuffle=False, num_workers=4)
 elif args.split == 'testdev':
-    test_dataset = DAVISTestDataset(davis_path+'/test-dev', imset='2017/test-dev.txt')
+    test_dataset = DAVISTestDataset(davis_path+'/test-dev', imset='2017/test-dev.txt', first_frame_folder=args.first_frame_folder)
     test_loader = DataLoader(test_dataset, batch_size=1, shuffle=False, num_workers=4)
 else:
     raise NotImplementedError
@@ -71,10 +72,10 @@ for data in progressbar(test_loader, max_value=len(test_loader), redirect_stdout
 
     with torch.cuda.amp.autocast(enabled=args.amp):
         rgb = data['rgb'].cuda()
-        msk = data['gt'][0].cuda()
+        msk = data['f_mask'].cuda()
         info = data['info']
         name = info['name'][0]
-        k = len(info['labels'][0])
+        k = len(info['f_labels'][0])
         size = info['size_480p']
 
         torch.cuda.synchronize()

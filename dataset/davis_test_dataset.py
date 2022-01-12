@@ -16,12 +16,15 @@ from dataset.util import all_to_onehot
 
 
 class DAVISTestDataset(Dataset):
-    def __init__(self, root, imset='2017/val.txt', resolution=480, single_object=False, target_name=None):
+    def __init__(self, root, imset='2017/val.txt', resolution=480, first_frame_folder="Annotations", 
+                single_object=False, target_name=None):
         self.root = root
         if resolution == 480:
             res_tag = '480p'
         else:
             res_tag = 'Full-Resolution'
+
+        self.f_mask_file = path.join(root, first_frame_folder, '480p')
         self.mask_dir = path.join(root, 'Annotations', res_tag)
         self.mask480_dir = path.join(root, 'Annotations', '480p')
         self.image_dir = path.join(root, 'JPEGImages', res_tag)
@@ -91,6 +94,15 @@ class DAVISTestDataset(Dataset):
         
         images = torch.stack(images, 0)
         masks = np.stack(masks, 0)
+
+        # Read the possibly different first mask
+        # TODO: we are always using 480p masks and images here, generalization could be done
+        # TODO: Other than that, we don't take into consideration self.single_object
+        f_mask = np.array(Image.open(path.join(self.f_mask_file, video, '00000.png')).convert("P"), dtype=np.uint8)
+        f_labels = np.unique(f_mask)
+        f_labels = f_labels[f_labels != 0]
+        f_mask = torch.from_numpy(all_to_onehot(f_mask, f_labels)).float()
+        f_mask = f_mask.unsqueeze(2)
         
         if self.single_object:
             labels = [1]
@@ -106,11 +118,13 @@ class DAVISTestDataset(Dataset):
         masks = masks.unsqueeze(2)
 
         info['labels'] = labels
+        info['f_labels'] = f_labels
 
         data = {
             'rgb': images,
             'gt': masks,
             'info': info,
+            'f_mask': f_mask,
         }
 
         return data
