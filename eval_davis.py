@@ -37,7 +37,7 @@ out_path = args.output
 
 # Simple setup
 os.makedirs(out_path, exist_ok=True)
-palette = Image.open(path.expanduser(davis_path + '/trainval/Annotations/480p/blackswan/00000.png')).getpalette()
+palette = Image.open(path.expanduser(davis_path + '/trainval/' + args.first_frame_folder + '/480p/blackswan/00000.png')).getpalette()
 
 torch.autograd.set_grad_enabled(False)
 
@@ -72,10 +72,10 @@ for data in progressbar(test_loader, max_value=len(test_loader), redirect_stdout
 
     with torch.cuda.amp.autocast(enabled=args.amp):
         rgb = data['rgb'].cuda()
-        msk = data['f_mask'].cuda()
+        msk = data['gt'][0].cuda()
         info = data['info']
         name = info['name'][0]
-        k = len(info['f_labels'][0])
+        k = len(info['labels'][0])
         size = info['size_480p']
 
         torch.cuda.synchronize()
