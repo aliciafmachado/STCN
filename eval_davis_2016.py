@@ -25,6 +25,7 @@ parser.add_argument('--output')
 parser.add_argument('--top', type=int, default=20)
 parser.add_argument('--amp', action='store_true')
 parser.add_argument('--mem_every', default=5, type=int)
+parser.add_argument('--first_frame_folder', default='Annotations', help='Where to take the first frame annotation from.')
 args = parser.parse_args()
 
 davis_path = args.davis_path
@@ -36,7 +37,8 @@ os.makedirs(out_path, exist_ok=True)
 torch.autograd.set_grad_enabled(False)
 
 # Setup Dataset, a small hack to use the image set in the 2017 folder because the 2016 one is of a different format
-test_dataset = DAVISTestDataset(davis_path, imset='../../2017/trainval/ImageSets/2016/val.txt', single_object=True)
+test_dataset = DAVISTestDataset(davis_path, imset='../../2017/trainval/ImageSets/2016/val.txt', single_object=True, 
+        first_frame_folder=args.first_frame_folder)
 test_loader = DataLoader(test_dataset, batch_size=1, shuffle=False, num_workers=4, pin_memory=True)
 
 # Load our checkpoint
